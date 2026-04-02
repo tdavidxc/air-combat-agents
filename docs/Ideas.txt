@@ -1,0 +1,61 @@
+[1]
+- Maybe a missile system that targets "enemy" planes but has to avoid friendly aircraft, take into consideration different approaches on how to "seek" the enemy aircraft such as Infrared radiation, height changing efficiency, direction, not direct targeting, predicting where the enemy will be
+- deciding on what happens when thrust dies
+- some sort of search algorithm
+- relaying data to other missiles/aircrafts to help with "vision/radar"
+- asking questions like given x time, what configuration or model performans the best
+- has the least casualties (maybe have friendly aircrafts)
+- has the most kills
+- "sees" the most enemy aircrafts
+__________________________________
+Environment: 
+- simplified 2D plane - air combat simulation potentially including terrain and weather maybe
+- continuous environment instead of grid based
+
+Agents: 
+- missiles (independent agents) [radar range, infrared range, communication range]
+- aircrafts (both friendly and bogey) [we can have both scripted aircrafts + intelligent aircrafts)
+- Actions
+	- turn
+	- accelerate
+	- predict intercept
+	- detonate at a certain distance before impact
+	- communicate	
+	- arm/disarmed mode
+- Constraints
+	- fuel
+	- thrust range
+	- radar errors/aircraft cross section
+
+Task: 
+- intercept enemy aircraft while avoiding friendly aircraft
+
+AI/algorithm implementation:
+- search algorithms (A* search)
+- proportional navigation
+- prediction models (predictive targeting - forward planning)
+- coordination between agents
+- reinforcement learning?
+- swarm coordination
+- communication protocols?
+
+Performance metrics:
+- interception success rate
+- time to intercept from launch
+- friendly-fire events
+- 
+
+Potential Questions: 
+- Which targeting strategy/configuration leads to the highest interception rate?
+	- out of some of the AI implementations on targeting
+		- direct attack
+		- forward planning vector calculation
+		- reinforcement learning
+		- coordination etc.
+- Does predictive targeting outperform direct persuit?
+- How does infrared sensing vs radar sensing affect interception success?
+- Does communication between missiles improve interception efficiency/rates?
+- Does corporative missile behaviour outperform individual missiles?
+- How does limited fuel/thrust affect optimal interception strategies?
+- Does the initial missile state (vector/potision) affect interception rates?
+- Does the initial aircraft state (friendly and bogey + vector/position) affect interception rates?
