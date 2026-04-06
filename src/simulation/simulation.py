@@ -24,20 +24,28 @@ class Simulation:
                     img = Image.open("agents\\models\\friendly_jet.png").resize((60, 60))
                 elif current_object.get_type() == "enemy":
                     img = Image.open("agents\\models\\enemy_jet.png").resize((60, 60))
-                self.pil_images[current_object.get_id()] = img
+            
+            #if the object is a missile
+            if current_object.get_name() == "missile":
+                if current_object.get_type() == "friendly":
+                    img = Image.open("agents\\models\\friendly_missile.png").resize((4, 20))
+                elif current_object.get_type() == "enemy":
+                    img = Image.open("agents\\models\\enemy_missile.png").resize((4, 20))
+            
+            self.pil_images[current_object.get_id()] = img
                 
-                rotated = img.rotate(-current_object.get_heading(), expand=True)
-                image = ImageTk.PhotoImage(rotated)
-                self.current_images[current_object.get_id()] = image
+            rotated = img.rotate(-current_object.get_heading(), expand=True)
+            image = ImageTk.PhotoImage(rotated)
+            self.current_images[current_object.get_id()] = image
 
-                item_id = canvas.create_image(
-                    current_object.get_position()[0], 
-                    current_object.get_position()[1], 
-                    image=image
-                )
-                current_object.set_canvas_id(item_id)
-                
-                print(current_object.get_type() + " " + current_object.get_name() + " spawned at position: ", current_object.get_position(), "with velocity: ", current_object.get_velocity(), "and heading: ", current_object.get_heading())
+            item_id = canvas.create_image(
+                current_object.get_position()[0], 
+                current_object.get_position()[1], 
+                image=image
+            )
+            current_object.set_canvas_id(item_id)
+            
+            print(current_object.get_type() + " " + current_object.get_name() + " spawned at position: ", current_object.get_position(), "with velocity: ", current_object.get_velocity(), "and heading: ", current_object.get_heading())
 
 
     def update_objects(self, canvas, objects):
@@ -47,7 +55,25 @@ class Simulation:
                 self.rotate_object(canvas, current_object, current_object.get_heading())
                 #position
                 canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
+            if current_object.get_name() == "missile":
+                #the missile will be attached to the jet and invisible until its fired, so only update the position and orientation if it has been fired
+                if current_object.STATUS != "armed":
+                    #visibility
+                    canvas.itemconfig(current_object.get_canvas_id(), state='hidden')
+                    #orientation and position of the jet its attached to
+                    jet = next((obj for obj in objects if obj.get_id() == current_object.JET_ID), None)
+                    if jet is not None:
+                        self.rotate_object(canvas, current_object, jet.get_heading())
+                        #position of the jet its attached to
+                        canvas.coords(current_object.get_canvas_id(), jet.get_position()[0], jet.get_position()[1])
 
+
+
+                if current_object.STATUS == "fired":
+                    #orientation
+                    self.rotate_object(canvas, current_object, current_object.get_heading())
+                    #position
+                    canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
 
             
 

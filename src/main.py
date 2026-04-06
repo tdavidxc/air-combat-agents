@@ -3,6 +3,7 @@ import os
 import tkinter as tk
 from simulation.simulation import Simulation
 from agents.jet import Jet
+from agents.missile import Missile
 import time
 
 def test_simulation():
@@ -36,9 +37,25 @@ def test_simulation():
         50,
         "enemy"
     )
+
+    missile1 = Missile()
+    missile1.initialise(
+        3,          #id
+        10.0,      #acceleration (recommended for testing: 10.0)
+        0,          #turn rate (recommended for testing: 100)
+        50,           #explosion radius
+        30,           #detonation distance
+        5.0,          #fuel (recommended for testing: 5.0)
+        1.0,          #fuel rate (recommended for testing: 1.0)
+    "direct_path",            #targetting strategy
+        "armed",     #status
+        jet1,          #jet that the missile is attached to
+        "friendly"    #type
+    )
+
     #creating the objects in the canvas
-    simulation.create_objects(canvas, [jet1, jet2])
-    agents = [jet1, jet2]
+    simulation.create_objects(canvas, [jet1, jet2, missile1])
+    agents = [jet1, jet2, missile1]
 
 
     #test the running of the simulation here
