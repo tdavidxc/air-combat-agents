@@ -3,19 +3,6 @@ import math
 import random
 
 class Jet:
-    #this is a simpler version of the jet class i made just in-case
-    def initialise(self, id, x, y, heading, velocity, type):
-        self.ID = id
-        self.x = x 
-        self.y = y 
-        self.heading = heading 
-        self.velocity = velocity
-        self.acceleration = 0
-        self.turn_rate = 0
-        self.TYPE = type
-        self.NAME = "jet"
-        self.canvas_id = None
-
     def initialise(self, id, x, y, heading, velocity, acceleration, turn_rate, type):
         self.ID = id
         self.x = x
@@ -24,7 +11,7 @@ class Jet:
         self.velocity = velocity
         self.acceleration = acceleration
         self.turn_rate = turn_rate
-        self.TYPE = type
+        self.TYPE = type #can be "friendly" or "enemy"
         self.NAME = "jet"
         self.canvas_id = None
 

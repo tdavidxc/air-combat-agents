@@ -34,7 +34,7 @@ def test_simulation():
         50,
         0.0,
         50,
-        "friendly"
+        "enemy"
     )
     #creating the objects in the canvas
     simulation.create_objects(canvas, [jet1, jet2])

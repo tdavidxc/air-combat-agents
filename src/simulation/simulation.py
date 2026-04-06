@@ -19,8 +19,11 @@ class Simulation:
         for current_object in objects:
             
             #if the object is a jet and is friendly, load the friendly jet png at the location initialised
-            if current_object.get_name() == "jet" and current_object.get_type() == "friendly":
-                img = Image.open("agents\\models\\friendly_jet.png").resize((60, 60))
+            if current_object.get_name() == "jet":
+                if current_object.get_type() == "friendly":
+                    img = Image.open("agents\\models\\friendly_jet.png").resize((60, 60))
+                elif current_object.get_type() == "enemy":
+                    img = Image.open("agents\\models\\enemy_jet.png").resize((60, 60))
                 self.pil_images[current_object.get_id()] = img
                 
                 rotated = img.rotate(-current_object.get_heading(), expand=True)
@@ -34,7 +37,7 @@ class Simulation:
                 )
                 current_object.set_canvas_id(item_id)
                 
-                print(current_object.get_name() + " spawned at position: ", current_object.get_position(), "with velocity: ", current_object.get_velocity(), "and heading: ", current_object.get_heading())
+                print(current_object.get_type() + " " + current_object.get_name() + " spawned at position: ", current_object.get_position(), "with velocity: ", current_object.get_velocity(), "and heading: ", current_object.get_heading())
 
 
     def update_objects(self, canvas, objects):
