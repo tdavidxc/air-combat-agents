@@ -3,6 +3,15 @@
 Simulation of autonomous missile agents intercepting aircraft using AI strategies such as A* search, predictive targeting and cooperative behaviour.
 
 
+Dependencies:
+
+pip install pillow
+
+pip install tkinter
+
+
+
+
 Main.py (Entry Point)
 
 - where experiments are run, not the actual simulation logic
@@ -45,4 +54,16 @@ jet.py (Agent)
 - Involves friendly + enemy aircraft
 - movement behaviour which can be scrupted randomly or intelligent to be evasive
 - States include position, velocity, type (enemy/friendly)
--
+
+
+
+
+Models:
+
+All models are modelled with 15 by 15 pixel art by hand
+
+- friendly_jet.png
+- enemy_jet.png
+- friendly_missile.png
+- enemy_missile.png
+- explosion.png
