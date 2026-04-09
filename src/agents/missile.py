@@ -29,11 +29,13 @@ class Missile:
         self.canvas_id = None
         self.radar = None
         self.drag = 0.5
+        self.hit = False #a boolean to see whether the missile hit the target
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time):
 
-        
+        if self.STATUS == "exploded":
+            return #returning early if the missile is exploded so the simulation can handle the rest
 
         #keeping missile attached to the jet and invisible until its fired
         if self.STATUS == "armed": #if the missile is not in status "fired", it will stay attached to the jet and invisible, so update its position and heading to match the jet
@@ -64,6 +66,20 @@ class Missile:
             #controlling fuel
             if(self.fuel > 0):
                 self.fuel -= self.FUEL_RATE * delta_time
+
+            #vicinity detonation logic
+            if self.target is not None:
+                target_x, target_y = self.target.get_position()
+                distance_to_target = math.sqrt(
+                    (target_x - self.x) ** 2 + #x position
+                    (target_y - self.y) ** 2   #y position
+                )
+                if distance_to_target <= self.DETONATION_DISTANCE:
+                    self.STATUS = "exploded"
+                    self.hit = True
+
+
+
         
         #keep the missile within the bounds of the simulation by wrapping around the boundaries
         if self.x < 0:
@@ -74,10 +90,6 @@ class Missile:
             self.y = 1000
         elif self.y > 1000:
             self.y = 0
-
-        #TODO: if its exploded, it needs to handle its logic but later
-        if self.STATUS == "exploded":
-            pass
 
 
     
@@ -125,6 +137,8 @@ class Missile:
         return self.radar
     def get_target(self):
         return self.target
+    def get_hit_status(self):
+        return self.hit
     
     #setters
     def set_acceleration(self, acceleration):

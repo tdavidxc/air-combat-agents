@@ -12,6 +12,7 @@ class Simulation:
         canvas.pack()
         self.pil_images = {} #storing original PIL images by object id for modification
         self.current_images = {} 
+        self.log = [] #storing the log of the simulation (the report of the simulation)
         return canvas
         
     
@@ -78,6 +79,7 @@ class Simulation:
                     canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
 
                 elif current_object.STATUS == "exploded":
+                    print("DEBUG explosion at:", current_object.get_position(), "radius:", current_object.EXPLOSION_RADIUS)
                     print("Missile " + str(current_object.get_id()) + " exploded at position: ", current_object.get_position(), "after running out of fuel or hitting the target.")
                     #visibility
                     canvas.itemconfig(current_object.get_canvas_id(), state='hidden')
@@ -85,6 +87,48 @@ class Simulation:
                     #deleting the missile object
                     canvas.delete(current_object.get_canvas_id())
                     objects.remove(current_object)
+                    
+                    
+
+                    #detecting if any jets were within the explosion radius and track which ones were hit for the final report at the end of the simulation
+                    jets_exploded = []
+                    if current_object.get_name() == "missile" and current_object.get_hit_status() == True: #only if the missile hit a jet
+                        for obj in objects:
+                            #only if its a jet
+                            if obj.get_name() == "jet":
+                                #calculating the distance between the explosion and the jet
+                                distance = math.sqrt(
+                                    (obj.get_position()[0] - current_object.get_position()[0]) ** 2 +  #the x position
+                                    (obj.get_position()[1] - current_object.get_position()[1]) ** 2    #the y position
+                                )
+                                print("DEBUG jet", obj.get_id(), "distance from explosion:", round(distance, 1))
+                                if distance <= current_object.EXPLOSION_RADIUS:
+                                    print("Jet " + str(obj.get_id()) + " was hit by the explosion of missile " + str(current_object.get_id()) + " at position: ", obj.get_position())
+                                    #logging jetx killed jety using missilez at position p
+                                    self.log.append("Jet " + str(current_object.get_jet_id()) + " killed Jet " + str(obj.get_id()) + " using Missile " + str(current_object.get_id()) + " as position: " + str(obj.get_position()))
+                                    jets_exploded.append(obj)
+                    #removing the jets that were hit
+                    for jet in jets_exploded:
+                        canvas.delete(jet.get_canvas_id())
+                        objects.remove(jet)
+
+                    #display the explosion at agents\\models\\explosion.png for 1 seconds
+                    explosion_img = Image.open("agents\\models\\explosion.png").resize((60, 60))
+                    explosion_image = ImageTk.PhotoImage(explosion_img)
+                    explosion_id = canvas.create_image(
+                        current_object.get_position()[0], 
+                        current_object.get_position()[1], 
+                        image=explosion_image
+                    )
+                    #keeping the reference alive
+                    self.current_images["explosion_" + str(current_object.get_id())] = explosion_image
+
+                    #removing the explosion after 1 second
+                    canvas.after(1000, lambda: canvas.delete(explosion_id)) #what lambda does is create a function without actually defining it
+
+                    
+
+
 
 
     def rotate_object(self, canvas, object, angle):
@@ -94,3 +138,6 @@ class Simulation:
         image = ImageTk.PhotoImage(rotated)
         self.current_images[object.get_id()] = image #keeping the reference alive
         canvas.itemconfig(object.get_canvas_id(), image=image) #updating the canvas item
+
+    def get_log(self):
+        return self.log

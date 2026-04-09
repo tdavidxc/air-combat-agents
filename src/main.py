@@ -44,7 +44,7 @@ def test_simulation():
         3,          #id
         10.0,      #acceleration (recommended for testing: 10.0)
         150,          #turn strength (recommended for testing: 50+, often 3x aircraft turn rate)
-        50,           #explosion radius
+        30,           #explosion radius #for now the pixel size of the explosion png [2x pixel size because of resize]
         30,           #detonation distance
         5.0,          #fuel (recommended for testing: 5.0)
         1.0,          #fuel rate (recommended for testing: 1.0)
@@ -67,6 +67,16 @@ def test_simulation():
     missile_fired = False
     
 
+
+    def after_simulation(log):
+        #if simulation log isnt empty, print it
+        if log:
+            print("Simulation log: \n")
+            for entry in log:
+                print(entry)
+        else:
+            print("Simulation log is empty")
+
     #run the simulation for simulation_length seconds given in each simulation function
     def simulation_loop():
         nonlocal last_time, start_time, missile_fired #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
@@ -81,12 +91,15 @@ def test_simulation():
         #@NOTE: every second condition
         if int(elapsed_time) % 1 == 0 and int(elapsed_time) != int(elapsed_time - delta_time):
             print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
-            print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second")
-            
+            if(missile1 in agents):
+                print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second", "position: ", missile1.get_position())
+            if(jet2 in agents):
+                print("--- Enemy jet (jet2) position: ", jet2.get_position(), "heading: ", jet2.heading, "degrees ---")
 
         #simulation stop condition
         if elapsed_time > simulation_length:
             print("Simulation ended after " + str(simulation_length) + " seconds.")
+            after_simulation(simulation.get_log()) #print the log of the simulation after it ends
             return
         
 
@@ -97,7 +110,7 @@ def test_simulation():
             missile_fired = True
             print("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()))
 
-        for agent in agents:
+        for agent in list(agents): #after testing, i found that looping over a copy of agents is needed because im removing the agents from the original list before I need them
             agent.move(delta_time, elapsed_time) #move the agent based on its own individual movement logic
 
         simulation.update_objects(canvas, agents)
@@ -107,6 +120,8 @@ def test_simulation():
     window.after(16, simulation_loop)
     window.mainloop() #starting the tkinter main loop to display the window and canvas
 
+
+    
 
 
 if __name__ == "__main__":
