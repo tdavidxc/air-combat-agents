@@ -16,18 +16,22 @@ class DirectPath:
 
         dx = self.target_x - self.missile.x
         dy = self.target_y - self.missile.y
-        target_angle = math.degrees(math.atan2(dy, dx)) #@NOTE: taken from the simpleBot3 file from labs
+        target_angle = math.degrees(math.atan2(dx, -dy)) #@NOTE: taken from the simpleBot3 file from labs, changed to make 0 north
 
         #calculate the difference between the current heading and the target angle
         angle_diff = (target_angle - self.missile.get_heading() + 360) % 360
         if angle_diff > 180:
             angle_diff -= 360
+
+        turn_strength = self.missile.get_turn_strength()
+
+        if angle_diff > turn_strength:
+            self.missile.turn_rate = min(turn_strength, angle_diff)
+        else:
+            self.missile.turn_rate = max(-turn_strength, angle_diff)
         
         #turn towards the target, by changing the misisle's turn rate to the negative or positive of its own turn rate depending on direction
-        if angle_diff > 0:
-            self.missile.turn_rate = self.missile.get_turn_rate()
-        else:
-            self.missile.turn_rate = -self.missile.get_turn_rate()
+        #self.missile.turn_rate = max(-self.missile.get_turn_rate(), min(self.missile.get_turn_strength(), angle_diff / self.missile.get_turn_strength()))
 
         
         #if fuel is not none, increase acceleration

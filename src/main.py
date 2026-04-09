@@ -43,7 +43,7 @@ def test_simulation():
     missile1.initialise(
         3,          #id
         10.0,      #acceleration (recommended for testing: 10.0)
-        0,          #turn rate (recommended for testing: 100)
+        150,          #turn strength (recommended for testing: 50+, often 3x aircraft turn rate)
         50,           #explosion radius
         30,           #detonation distance
         5.0,          #fuel (recommended for testing: 5.0)
@@ -81,6 +81,7 @@ def test_simulation():
         #@NOTE: every second condition
         if int(elapsed_time) % 1 == 0 and int(elapsed_time) != int(elapsed_time - delta_time):
             print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
+            print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second")
             
 
         #simulation stop condition

@@ -4,7 +4,7 @@ import random
 from algorithms.direct_path import DirectPath
 
 class Missile:
-    def initialise(self, id, acceleration, turn_rate, explosion_radius, detonation_distance, fuel, fuel_rate, targetting_strategy, status, jet, type):
+    def initialise(self, id, acceleration, turn_strength, explosion_radius, detonation_distance, fuel, fuel_rate, targetting_strategy, status, jet, type):
         self.ID = id
         #these are the same as the jet its attached to
         self.x = jet.get_position()[0]
@@ -13,7 +13,8 @@ class Missile:
         self.velocity = jet.get_velocity()
 
         self.acceleration = acceleration
-        self.turn_rate = turn_rate
+        self.turn_rate = 0
+        self.TURN_STRENGTH = turn_strength
         self.EXPLOSION_RADIUS = explosion_radius
         self.DETONATION_DISTANCE = detonation_distance
         self.fuel = fuel
@@ -46,6 +47,8 @@ class Missile:
         if self.STATUS == "fired":
             #update this logic to decide what the missile does when fired (changed depending on targetting strategy @NOTE: to be implemented)
             if self.TARGETTING_STRATEGY == "direct_path":
+                #if the directpath hasnt already been initialised @NOTE: might not need to do this
+                
                 direct_path = DirectPath()
                 direct_path.initialise(self, self.target) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
                 direct_path.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
@@ -102,6 +105,8 @@ class Missile:
         return self.canvas_id
     def get_turn_rate(self):
         return self.turn_rate
+    def get_turn_strength(self):
+        return self.TURN_STRENGTH
     def get_explosion_radius(self):
         return self.EXPLOSION_RADIUS
     def get_detonation_distance(self):
