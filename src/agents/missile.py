@@ -58,6 +58,13 @@ class Missile:
             self.y = 0
 
 
+
+
+        #TODO: if its exploded, it needs to handle its logic but later
+        if self.STATUS == "exploded":
+            pass
+
+
     
 
     #getters

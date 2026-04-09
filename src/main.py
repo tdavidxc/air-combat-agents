@@ -9,6 +9,7 @@ import time
 def test_simulation():
     #test the simulation by creating a window and canvas
     simulation = Simulation()
+    simulation_length = 30 #length of simulation in seconds
     window = tk.Tk()
     canvas = simulation.initialise(window, 1000, 1000)
     #test the creation of agents here
@@ -59,13 +60,26 @@ def test_simulation():
 
 
     #test the running of the simulation here
-    last_time = time.time()
+    last_time = start_time = time.time()
+    
 
+    #run the simulation for simulation_length seconds given in each simulation function
     def simulation_loop():
-        nonlocal last_time #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
+        nonlocal last_time, start_time #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
+
         now = time.time()
         delta_time = now - last_time #time since the last frame in seconds
+        elapsed_time = now - start_time
         last_time = now
+
+        #counting seconds in the simulation without multiple repetitive prints in the console, only print every second
+        if int(elapsed_time) % 1 == 0 and int(elapsed_time) != int(elapsed_time - delta_time):
+            print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
+
+        #simulation stop condition
+        if elapsed_time > simulation_length:
+            print("Simulation ended after " + str(simulation_length) + " seconds.")
+            return
 
         for agent in agents:
             agent.move(delta_time) #move the agent based on its own individual movement logic
