@@ -61,28 +61,43 @@ def test_simulation():
 
     #test the running of the simulation here
     last_time = start_time = time.time()
+
+    
+    #TODO: TEMPORARY
+    missile_fired = False
     
 
     #run the simulation for simulation_length seconds given in each simulation function
     def simulation_loop():
-        nonlocal last_time, start_time #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
+        nonlocal last_time, start_time, missile_fired #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
 
         now = time.time()
         delta_time = now - last_time #time since the last frame in seconds
         elapsed_time = now - start_time
         last_time = now
 
+
         #counting seconds in the simulation without multiple repetitive prints in the console, only print every second
+        #@NOTE: every second condition
         if int(elapsed_time) % 1 == 0 and int(elapsed_time) != int(elapsed_time - delta_time):
             print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
+            
 
         #simulation stop condition
         if elapsed_time > simulation_length:
             print("Simulation ended after " + str(simulation_length) + " seconds.")
             return
+        
+
+        #test missile fire TEMPORARY
+        if not missile_fired and elapsed_time > 5: #fire the missile after 5 seconds for testing
+            missile1.STATUS = "fired"
+            missile1.set_target(jet2) #setting the missile's target to the enemy jet for testing
+            missile_fired = True
+            print("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()))
 
         for agent in agents:
-            agent.move(delta_time) #move the agent based on its own individual movement logic
+            agent.move(delta_time, elapsed_time) #move the agent based on its own individual movement logic
 
         simulation.update_objects(canvas, agents)
         window.after(16, simulation_loop) #schedules the next frame after 16 milliseconds, which is approx. 60fps @NOTE: this code was taken from a tutorial on how to make game loops in tkinter

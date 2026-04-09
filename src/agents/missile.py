@@ -21,17 +21,21 @@ class Missile:
         self.TARGETTING_STRATEGY = targetting_strategy #need to make these strategies
         self.STATUS = status #can be "armed", "fired", "exploded"
         self.jet = jet #the jet object that this missile is attached to, used to get the position and heading of the missile when it is attached to the jet
+        self.target = None
         self.JET_ID = jet.get_id() #the id of the jet that this missile is attached to
         self.TYPE = type #can be "friendly" or "enemy"
         self.NAME = "missile"
         self.canvas_id = None
         self.radar = None
+        self.drag = 0.5
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
-    def move(self, delta_time):
+    def move(self, delta_time, elapsed_time):
+
+        
 
         #keeping missile attached to the jet and invisible until its fired
-        if self.STATUS != "armed": #if the missile is not in status "fired", it will stay attached to the jet and invisible, so update its position and heading to match the jet
+        if self.STATUS == "armed": #if the missile is not in status "fired", it will stay attached to the jet and invisible, so update its position and heading to match the jet
             self.x, self.y = self.jet.get_position()
             self.heading = self.jet.get_heading()
             self.velocity = self.jet.get_velocity()
@@ -43,11 +47,22 @@ class Missile:
             #update this logic to decide what the missile does when fired (changed depending on targetting strategy @NOTE: to be implemented)
             if self.TARGETTING_STRATEGY == "direct_path":
                 direct_path = DirectPath()
-                direct_path.initialise(self, self.jet.get_position()[0], self.jet.get_position()[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
-                direct_path.update(delta_time) #updating the missile's turn rate based on the direct path algorithm
+                direct_path.initialise(self, self.target) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                direct_path.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
+            #movement logic
+            self.velocity += self.acceleration * delta_time
+            self.heading += self.turn_rate * delta_time
+            self.heading %= 360 #modding with 360 to keep the heading within 360 degrees
+            #move in the direction of the heading at the current velocity
+            rad = math.radians(self.heading)
+            self.x += math.sin(rad) * self.velocity * delta_time
+            self.y -= math.cos(rad) * self.velocity * delta_time
+
+            #controlling fuel
+            if(self.fuel > 0):
+                self.fuel -= self.FUEL_RATE * delta_time
         
-        
-        #keep the jet within the bounds of the simulation by wrapping around the boundaries
+        #keep the missile within the bounds of the simulation by wrapping around the boundaries
         if self.x < 0:
             self.x = 1000
         elif self.x > 1000:
@@ -56,9 +71,6 @@ class Missile:
             self.y = 1000
         elif self.y > 1000:
             self.y = 0
-
-
-
 
         #TODO: if its exploded, it needs to handle its logic but later
         if self.STATUS == "exploded":
@@ -89,7 +101,7 @@ class Missile:
     def get_canvas_id(self):
         return self.canvas_id
     def get_turn_rate(self):
-        return self.TURN_RATE
+        return self.turn_rate
     def get_explosion_radius(self):
         return self.EXPLOSION_RADIUS
     def get_detonation_distance(self):
@@ -100,6 +112,14 @@ class Missile:
         return self.FUEL_RATE
     def get_targetting_strategy(self):
         return self.TARGETTING_STRATEGY
+    def get_status(self):
+        return self.STATUS
+    def get_jet(self):
+        return self.jet
+    def get_radar(self):
+        return self.radar
+    def get_target(self):
+        return self.target
     
     #setters
     def set_acceleration(self, acceleration):
@@ -114,5 +134,9 @@ class Missile:
         self.turn_rate = turn_rate
     def set_fuel(self, fuel):
         self.fuel = fuel
-    
-
+    def set_status(self, status):
+        self.STATUS = status
+    def set_target(self, target):
+        self.target = target
+    def set_radar(self, radar):
+        self.radar = radar

@@ -55,9 +55,9 @@ class Simulation:
                 self.rotate_object(canvas, current_object, current_object.get_heading())
                 #position
                 canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
-            if current_object.get_name() == "missile":
+            elif current_object.get_name() == "missile":
                 #the missile will be attached to the jet and invisible until its fired, so only update the position and orientation if it has been fired
-                if current_object.STATUS != "armed":
+                if current_object.STATUS == "armed":
                     #visibility
                     canvas.itemconfig(current_object.get_canvas_id(), state='hidden')
                     #orientation and position of the jet its attached to
@@ -69,13 +69,22 @@ class Simulation:
 
 
 
-                if current_object.STATUS == "fired":
+                elif current_object.STATUS == "fired":
+                    #visibility
+                    canvas.itemconfig(current_object.get_canvas_id(), state='normal')
                     #orientation
                     self.rotate_object(canvas, current_object, current_object.get_heading())
                     #position
                     canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
 
-            
+                elif current_object.STATUS == "exploded":
+                    print("Missile " + str(current_object.get_id()) + " exploded at position: ", current_object.get_position(), "after running out of fuel or hitting the target.")
+                    #visibility
+                    canvas.itemconfig(current_object.get_canvas_id(), state='hidden')
+                    #potentially add explosion animation in the future @NOTE
+                    #deleting the missile object
+                    canvas.delete(current_object.get_canvas_id())
+                    objects.remove(current_object)
 
 
     def rotate_object(self, canvas, object, angle):

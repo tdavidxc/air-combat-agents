@@ -16,7 +16,7 @@ class Jet:
         self.canvas_id = None
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
-    def move(self, delta_time):
+    def move(self, delta_time, elapsed_time):
         #simple movement logic for the jet right now, it moves with the initialised characteristics
         self.velocity += self.acceleration * delta_time
         self.heading += self.turn_rate * delta_time
