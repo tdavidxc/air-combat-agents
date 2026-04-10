@@ -30,6 +30,7 @@ class Missile:
         self.radar = None
         self.drag = 0.5
         self.hit = False #a boolean to see whether the missile hit the target
+        self.explosion_reason = None #a string to see whether the missile killed or ran out of fuel
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time):
@@ -66,6 +67,8 @@ class Missile:
             #controlling fuel
             if(self.fuel > 0):
                 self.fuel -= self.FUEL_RATE * delta_time
+            if(self.fuel <= 0):
+                self.fuel = 0
 
             #vicinity detonation logic
             if self.target is not None:
@@ -76,6 +79,7 @@ class Missile:
                 )
                 if distance_to_target <= self.DETONATION_DISTANCE:
                     self.STATUS = "exploded"
+                    self.explosion_reason = "hit"
                     self.hit = True
 
 
@@ -90,7 +94,6 @@ class Missile:
             self.y = 1000
         elif self.y > 1000:
             self.y = 0
-
 
     
 
@@ -139,6 +142,8 @@ class Missile:
         return self.target
     def get_hit_status(self):
         return self.hit
+    def get_explosion_reason(self):
+        return self.explosion_reason
     
     #setters
     def set_acceleration(self, acceleration):
@@ -159,3 +164,5 @@ class Missile:
         self.target = target
     def set_radar(self, radar):
         self.radar = radar
+    def set_explosion_reason(self, reason):
+        self.explosion_reason = reason

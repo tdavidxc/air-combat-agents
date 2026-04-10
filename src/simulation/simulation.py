@@ -13,6 +13,7 @@ class Simulation:
         self.pil_images = {} #storing original PIL images by object id for modification
         self.current_images = {} 
         self.log = [] #storing the log of the simulation (the report of the simulation)
+        self.elapsed_time = 0
         return canvas
         
     
@@ -36,13 +37,13 @@ class Simulation:
             self.pil_images[current_object.get_id()] = img
                 
             rotated = img.rotate(-current_object.get_heading(), expand=True)
-            image = ImageTk.PhotoImage(rotated)
-            self.current_images[current_object.get_id()] = image
+            photo = ImageTk.PhotoImage(rotated)
+            self.current_images[current_object.get_id()] = photo
 
             item_id = canvas.create_image(
                 current_object.get_position()[0], 
                 current_object.get_position()[1], 
-                image=image
+                image=self.current_images[current_object.get_id()]
             )
             current_object.set_canvas_id(item_id)
             
@@ -50,7 +51,7 @@ class Simulation:
 
 
     def update_objects(self, canvas, objects):
-        for current_object in objects:
+        for current_object in list(objects):
             if current_object.get_name() == "jet":
                 #orientation
                 self.rotate_object(canvas, current_object, current_object.get_heading())
@@ -78,9 +79,14 @@ class Simulation:
                     #position
                     canvas.coords(current_object.get_canvas_id(), current_object.get_position()[0], current_object.get_position()[1])
 
+                    
+
                 elif current_object.STATUS == "exploded":
-                    print("DEBUG explosion at:", current_object.get_position(), "radius:", current_object.EXPLOSION_RADIUS)
-                    print("Missile " + str(current_object.get_id()) + " exploded at position: ", current_object.get_position(), "after running out of fuel or hitting the target.")
+                    if(current_object.explosion_reason == "hit"):
+                        print("Missile " + str(current_object.get_id()) + " exploded at position: ", current_object.get_position(), "after hitting its target.")
+                    elif(current_object.explosion_reason == "fuel"):
+                        print("Missile " + str(current_object.get_id()) + " exploded at position: ", current_object.get_position(), "after running out of fuel.")
+                        self.add_log("Missile " + str(current_object.get_id()) + " exploded at position: " + str(current_object.get_position()) + " after running out of fuel.")
                     #visibility
                     canvas.itemconfig(current_object.get_canvas_id(), state='hidden')
                     #potentially add explosion animation in the future @NOTE
@@ -105,7 +111,7 @@ class Simulation:
                                 if distance <= current_object.EXPLOSION_RADIUS:
                                     print("Jet " + str(obj.get_id()) + " was hit by the explosion of missile " + str(current_object.get_id()) + " at position: ", obj.get_position())
                                     #logging jetx killed jety using missilez at position p
-                                    self.log.append("Jet " + str(current_object.get_jet()) + " killed Jet " + str(obj.get_id()) + " using Missile " + str(current_object.get_id()) + " as position: " + str(obj.get_position()))
+                                    self.add_log("Jet " + str(current_object.get_jet()) + " killed Jet " + str(obj.get_id()) + " using Missile " + str(current_object.get_id()) + " as position: " + str(obj.get_position()))
                                     jets_exploded.append(obj)
                     #removing the jets that were hit
                     for jet in jets_exploded:
@@ -124,9 +130,7 @@ class Simulation:
                     self.current_images["explosion_" + str(current_object.get_id())] = explosion_image
 
                     #removing the explosion after 1 second
-                    canvas.after(1000, lambda: canvas.delete(explosion_id)) #what lambda does is create a function without actually defining it
-
-                    
+                    canvas.after(1000, lambda eid=explosion_id: canvas.delete(eid)) #what lambda does is create a function without actually defining it. using eid to make sure multiple explosions dont mean any other explosion functions get trampled on
 
 
 
@@ -141,3 +145,10 @@ class Simulation:
 
     def get_log(self):
         return self.log
+    
+    def add_log(self, entry):
+        #adding log with elapsed time
+        self.log.append("[" + str(int(self.elapsed_time)) + "s] " + entry)
+
+    def set_elapsed_time(self, elapsed_time):
+        self.elapsed_time = elapsed_time

@@ -43,6 +43,7 @@ class DirectPath:
                 if self.missile.velocity < 1: #a  threshold to prevent the missile's velocity from getting smaller and smaller and never 0
                     self.missile.velocity = 0
                     self.missile.STATUS = "exploded"
+                    self.missile.set_explosion_reason("fuel")
 
                 else:
                     self.missile.velocity *= (1 - self.missile.drag * delta_time) #changing the missile's velocity based on its drag
@@ -52,6 +53,7 @@ class DirectPath:
                 self.missile.fuel = 0
                 #potentially adding anti friendly-kill mechanism in the future @NOTE
                 self.missile.STATUS = "exploded"
+                self.missile.set_explosion_reason("fuel")
 
         return
     

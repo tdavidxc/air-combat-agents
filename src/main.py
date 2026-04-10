@@ -19,7 +19,7 @@ def test_simulation():
     jet1.initialise(
         1,          #id
         500,        #x position
-        500,        #y position
+        500,        #y position [lower = higher on the screen]
         90,         #heading
         50,          #velocity (recommended for testing: 50)
         0.0,        #acceleration (recommended for testing: 0.0 | good acceleration = 10.0)
@@ -39,13 +39,25 @@ def test_simulation():
         "enemy"
     )
 
+    jet3 = Jet()
+    jet3.initialise(
+        3,
+        200,
+        100,
+        90,
+        50,
+        0.0,
+        50,
+        "enemy"
+    )
+
     missile1 = Missile()
     missile1.initialise(
-        3,          #id
+        4,          #id
         10.0,      #acceleration (recommended for testing: 10.0)
         150,          #turn strength (recommended for testing: 50+, often 3x aircraft turn rate)
-        30,           #explosion radius #for now the pixel size of the explosion png [2x pixel size because of resize]
-        30,           #detonation distance
+        65,           #explosion radius #for now the pixel size of the explosion png [2x pixel size because of resize] (recommended for testing: greater than detonation distance)
+        50,           #detonation distance (recommended for testing: 50)
         5.0,          #fuel (recommended for testing: 5.0)
         1.0,          #fuel rate (recommended for testing: 1.0)
     "direct_path",            #targetting strategy
@@ -54,9 +66,24 @@ def test_simulation():
         "friendly"    #type
     )
 
+    missile2 = Missile()
+    missile2.initialise(
+        5,
+        10.0,
+        150,
+        65,
+        50,
+        5.0,
+        1.0,
+        "direct_path",
+        "armed",
+        jet1,
+        "friendly"
+    )
+
     #creating the objects in the canvas
-    simulation.create_objects(canvas, [jet1, jet2, missile1])
-    agents = [jet1, jet2, missile1]
+    simulation.create_objects(canvas, [jet1, jet2, jet3, missile1, missile2])
+    agents = [jet1, jet2, jet3, missile1, missile2]
 
 
     #test the running of the simulation here
@@ -64,7 +91,8 @@ def test_simulation():
 
     
     #TODO: TEMPORARY
-    missile_fired = False
+    missile1_fired = False
+    missile2_fired = False
     
 
 
@@ -79,7 +107,7 @@ def test_simulation():
 
     #run the simulation for simulation_length seconds given in each simulation function
     def simulation_loop():
-        nonlocal last_time, start_time, missile_fired #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
+        nonlocal last_time, start_time, missile1_fired, missile2_fired #the nonlocal keyword allows the scope of the last_time to be accessed and modified within all nested functions like Jet
 
         now = time.time()
         delta_time = now - last_time #time since the last frame in seconds
@@ -90,11 +118,14 @@ def test_simulation():
         #counting seconds in the simulation without multiple repetitive prints in the console, only print every second
         #@NOTE: every second condition
         if int(elapsed_time) % 1 == 0 and int(elapsed_time) != int(elapsed_time - delta_time):
+            simulation.set_elapsed_time(elapsed_time)
             print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
             if(missile1 in agents):
                 print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second", "position: ", missile1.get_position())
             if(jet2 in agents):
                 print("--- Enemy jet (jet2) position: ", jet2.get_position(), "heading: ", jet2.heading, "degrees ---")
+            if(jet3 in agents):
+                print("--- Enemy jet (jet3) position: ", jet3.get_position(), "heading: ", jet3.heading, "degrees ---")
 
         #simulation stop condition
         if elapsed_time > simulation_length:
@@ -104,11 +135,20 @@ def test_simulation():
         
 
         #test missile fire TEMPORARY
-        if not missile_fired and elapsed_time > 5: #fire the missile after 5 seconds for testing
+        #NOTE temporary
+        if not missile1_fired and elapsed_time > 5: #fire the missile after 5 seconds for testing
             missile1.STATUS = "fired"
             missile1.set_target(jet2) #setting the missile's target to the enemy jet for testing
-            missile_fired = True
-            print("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()))
+            missile1_fired = True
+            simulation.add_log("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()))
+        if not missile2_fired and elapsed_time > 10: #fire the missile after 10 seconds for testing
+            missile2.STATUS = "fired"
+            missile2.set_target(jet3) #setting the missile's target to the enemy jet for testing
+            missile2_fired = True
+            simulation.add_log("Missile " + str(missile2.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet3.get_id()))
+
+
+
 
         for agent in list(agents): #after testing, i found that looping over a copy of agents is needed because im removing the agents from the original list before I need them
             agent.move(delta_time, elapsed_time) #move the agent based on its own individual movement logic
