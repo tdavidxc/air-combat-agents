@@ -97,15 +97,15 @@ class Simulation:
                             #only if its a jet
                             if obj.get_name() == "jet":
                                 #calculating the distance between the explosion and the jet
+                                #this is not to do the explosion check, but instead to see whether any damage was done by the explosion
                                 distance = math.sqrt(
                                     (obj.get_position()[0] - current_object.get_position()[0]) ** 2 +  #the x position
                                     (obj.get_position()[1] - current_object.get_position()[1]) ** 2    #the y position
                                 )
-                                print("DEBUG jet", obj.get_id(), "distance from explosion:", round(distance, 1))
                                 if distance <= current_object.EXPLOSION_RADIUS:
                                     print("Jet " + str(obj.get_id()) + " was hit by the explosion of missile " + str(current_object.get_id()) + " at position: ", obj.get_position())
                                     #logging jetx killed jety using missilez at position p
-                                    self.log.append("Jet " + str(current_object.get_jet_id()) + " killed Jet " + str(obj.get_id()) + " using Missile " + str(current_object.get_id()) + " as position: " + str(obj.get_position()))
+                                    self.log.append("Jet " + str(current_object.get_jet()) + " killed Jet " + str(obj.get_id()) + " using Missile " + str(current_object.get_id()) + " as position: " + str(obj.get_position()))
                                     jets_exploded.append(obj)
                     #removing the jets that were hit
                     for jet in jets_exploded:

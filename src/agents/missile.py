@@ -132,7 +132,7 @@ class Missile:
     def get_status(self):
         return self.STATUS
     def get_jet(self):
-        return self.jet
+        return self.jet.get_id()
     def get_radar(self):
         return self.radar
     def get_target(self):
