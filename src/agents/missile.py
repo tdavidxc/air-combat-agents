@@ -38,6 +38,7 @@ class Missile:
         self.explosion_reason = None #a string to see whether the missile killed or ran out of fuel
         self.RADAR_RANGE = radar_range
         self.RADAR_FOV= radar_fov
+        self.whos_radar = "jet"
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time):
@@ -115,6 +116,7 @@ class Missile:
     #this needs to prioritise its own target and not the "shared" target in jet because multiple missiles could and would be fired at different targets
     def update_target_position(self, agents):
         if self.target is None:
+            self.whos_radar = None
             return
 
         #if receiving data from the jet
@@ -122,10 +124,12 @@ class Missile:
             #if the jet can see the target, we will just take the enemy jets position
             self.target_position = self.target.get_position()
             self.receiving_target_info = True
+            self.whos_radar = "jet"
             return
         
         #otherwise using the missile's own radar to try and find that same target
         self.receiving_target_info = False
+        self.whos_radar = "missile"
         for agent in agents:
             if agent.get_name() == "jet" and agent.get_id() == self.target.get_id(): #grabbing the enemy jet object
                 #finding its distance
@@ -144,6 +148,7 @@ class Missile:
 
 
         #if missile's own radar can't find the target, then keeping last known position
+        self.whos_radar = None
 
     #getters
     #generalised getter
@@ -194,6 +199,8 @@ class Missile:
         return self.hit
     def get_explosion_reason(self):
         return self.explosion_reason
+    def get_whos_radar(self):
+        return self.whos_radar
     
     #setters
     def set_acceleration(self, acceleration):

@@ -18,14 +18,14 @@ def test_simulation():
     #example jets
     jet1.initialise(
         1,          #id
-        500,        #x position
-        500,        #y position [lower = higher on the screen]
+        900,        #x position
+        700,        #y position [lower = higher on the screen]
         90,         #heading
         50,          #velocity (recommended for testing: 50)
         0.0,        #acceleration (recommended for testing: 0.0 | good acceleration = 10.0)
         50,          #turn rate (recommended for testing: 50)
         "friendly",  #type
-        400,        #radar range (recommended for testing: 400)
+        200,        #radar range (recommended for testing: 400)
         360         #radar fov (recommended for testing: 360 [means full view])
     )
 
@@ -87,7 +87,7 @@ def test_simulation():
         "armed",
         jet1,
         "friendly",
-        2000,
+        400,
         360
     )
 
@@ -131,7 +131,9 @@ def test_simulation():
             simulation.set_elapsed_time(elapsed_time)
             print("Elapsed time: " + str(int(elapsed_time)) + " seconds")
             if(missile1 in agents):
-                print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second", "position: ", missile1.get_position())
+                print("--- Missile 1 angle:", missile1.heading, "degrees --- turn rate: ", missile1.turn_rate, "degrees/second", "position: ", missile1.get_position(), " whos radar: ", missile1.get_whos_radar(), " distance to target: ", simulation.get_object_distance(missile1, missile1.target))
+            if(missile2 in agents):
+                print("--- Missile 2 angle:", missile2.heading, "degrees --- turn rate: ", missile2.turn_rate, "degrees/second", "position: ", missile2.get_position(), " whos radar: ", missile2.get_whos_radar(), " distance to target: ", simulation.get_object_distance(missile2, missile2.target))
             if(jet2 in agents):
                 print("--- Enemy jet (jet2) position: ", jet2.get_position(), "heading: ", jet2.heading, "degrees ---")
             if(jet3 in agents):

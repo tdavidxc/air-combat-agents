@@ -152,3 +152,13 @@ class Simulation:
 
     def set_elapsed_time(self, elapsed_time):
         self.elapsed_time = elapsed_time
+
+    def get_object_distance(self, object1, object2):
+        #check if they are initialised and exist
+        if object1 is None or object2 is None:
+            return None
+        return math.sqrt(
+            (object1.get_position()[0] - object2.get_position()[0]) ** 2 +  #the x position
+            (object1.get_position()[1] - object2.get_position()[1]) ** 2    #the y position
+        )
+    
