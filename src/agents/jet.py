@@ -34,7 +34,7 @@ class Jet:
                 distance = math.sqrt(difference_x**2 + difference_y**2) #pythagorean theorem
                 angle_to_agent = math.degrees(math.atan2(difference_y, difference_x)) % 360 #atan2 gives the angle in radians between the positive x-axis and the point (difference_x, difference_y)
                 angle_difference = (angle_to_agent - self.heading + 360) % 360 #calculating the angle difference between the jet's heading and the angle to the agent
-                if distance <= self.RADAR_RANGE and angle_difference <= self.RADAR_FOV / 2 or angle_difference >= 360 - self.RADAR_FOV / 2: #checking if the agent is within the radar range and fov (both sides of the fov)
+                if distance <= self.RADAR_RANGE and (angle_difference <= self.RADAR_FOV / 2 or angle_difference >= 360 - self.RADAR_FOV / 2): #checking if the agent is within the radar range and fov (both sides of the fov)
                     targets.append(agent)
         return targets
     

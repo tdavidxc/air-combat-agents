@@ -13,6 +13,7 @@ class Missile:
         self.velocity = jet.get_velocity()
 
         self.acceleration = acceleration
+        self.BASE_ACCELERATION = acceleration
         self.turn_rate = 0
         self.TURN_STRENGTH = turn_strength
         self.EXPLOSION_RADIUS = explosion_radius
@@ -20,6 +21,8 @@ class Missile:
         self.fuel = fuel
         self.FUEL_RATE = fuel_rate
         self.TARGETTING_STRATEGY = targetting_strategy #need to make these strategies
+        self.targetting_strategy_object = None #the object of the targetting strategy, which will be initialised when the missile is fired, and will be used to update the missile's turn rate and acceleration based on the targetting strategy
+        self.targetting_strategy_initialised = False
         self.STATUS = status #can be "armed", "fired", "exploded"
         self.jet = jet #the jet object that this missile is attached to, used to get the position and heading of the missile when it is attached to the jet
         self.target = None
@@ -33,8 +36,8 @@ class Missile:
         self.drag = 0.5
         self.hit = False #a boolean to see whether the missile hit the target
         self.explosion_reason = None #a string to see whether the missile killed or ran out of fuel
-        self.missile_radar_range = radar_range
-        self.missile_radar_fov = radar_fov
+        self.RADAR_RANGE = radar_range
+        self.RADAR_FOV= radar_fov
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time):
@@ -56,9 +59,16 @@ class Missile:
             if self.TARGETTING_STRATEGY == "direct_path":
                 #if the directpath hasnt already been initialised @NOTE: might not need to do this
                 
-                direct_path = DirectPath()
-                direct_path.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
-                direct_path.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
+                if not self.targetting_strategy_initialised:
+                    self.targetting_strategy_initialised = True
+                    self.targetting_strategy_object = DirectPath()
+                    if self.target_position is not None:
+                        self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                    
+
+                if self.target_position is not None:
+                    self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                    self.targetting_strategy_object.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
             #movement logic
             self.velocity += self.acceleration * delta_time
             self.heading += self.turn_rate * delta_time
@@ -102,11 +112,15 @@ class Missile:
 
 
     #update the missile's target's position
+    #this needs to prioritise its own target and not the "shared" target in jet because multiple missiles could and would be fired at different targets
     def update_target_position(self, agents):
-        #first check if the jet is still giving target info. i.e., ask the jet
-        jet_pos = self.jet.get_current_target_last_known_position()
-        if jet_pos is not None:
-            self.target_position = jet_pos
+        if self.target is None:
+            return
+
+        #if receiving data from the jet
+        if self.target in self.jet.scan_for_targets(agents):
+            #if the jet can see the target, we will just take the enemy jets position
+            self.target_position = self.target.get_position()
             self.receiving_target_info = True
             return
         
@@ -124,7 +138,7 @@ class Missile:
                 difference_y = agent.get_position()[1] - self.y
                 angle_to_agent = math.degrees(math.atan2(difference_y, difference_x)) % 360 #atan2 gives the angle in radians between the positive x-axis and the point (difference_x, difference_y)
                 angle_difference = (angle_to_agent - self.heading + 360) % 360 #calculating the angle difference between the jet's heading and the angle to the agent
-                if distance <= self.RADAR_RANGE and angle_difference <= self.RADAR_FOV / 2 or angle_difference >= 360 - self.RADAR_FOV / 2:
+                if distance <= self.RADAR_RANGE and (angle_difference <= self.RADAR_FOV / 2 or angle_difference >= 360 - self.RADAR_FOV / 2):
                     self.target_position = agent.get_position()
                     return
 
@@ -144,6 +158,8 @@ class Missile:
         return self.velocity
     def get_acceleration(self):
         return self.acceleration
+    def get_base_acceleration(self):
+        return self.BASE_ACCELERATION
     def get_id(self):
         return self.ID
     def get_type(self):
@@ -195,7 +211,11 @@ class Missile:
     def set_status(self, status):
         self.STATUS = status
     def set_target(self, target):
-        self.target = target
+        #the target cannot be changed after its fired
+        if self.target is None:
+            self.target = target
+    def set_target_position(self, target_position):
+        self.target_position = target_position
     def set_radar(self, radar):
         self.radar = radar
     def set_explosion_reason(self, reason):

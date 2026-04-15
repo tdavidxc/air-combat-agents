@@ -24,7 +24,9 @@ def test_simulation():
         50,          #velocity (recommended for testing: 50)
         0.0,        #acceleration (recommended for testing: 0.0 | good acceleration = 10.0)
         50,          #turn rate (recommended for testing: 50)
-        "friendly"  #type
+        "friendly",  #type
+        400,        #radar range (recommended for testing: 400)
+        360         #radar fov (recommended for testing: 360 [means full view])
     )
 
     jet2 = Jet()
@@ -36,7 +38,9 @@ def test_simulation():
         50,
         0.0,
         50,
-        "enemy"
+        "enemy",
+        400,
+        360
     )
 
     jet3 = Jet()
@@ -48,7 +52,9 @@ def test_simulation():
         50,
         0.0,
         50,
-        "enemy"
+        "enemy",
+        400,
+        360
     )
 
     missile1 = Missile()
@@ -63,7 +69,9 @@ def test_simulation():
     "direct_path",            #targetting strategy
         "armed",     #status
         jet1,          #jet that the missile is attached to
-        "friendly"    #type
+        "friendly",    #type
+        400,           #radar range (recommended for testing: 400)
+        360            #radar fov (recommended for testing: 360 [means full view])
     )
 
     missile2 = Missile()
@@ -78,7 +86,9 @@ def test_simulation():
         "direct_path",
         "armed",
         jet1,
-        "friendly"
+        "friendly",
+        2000,
+        360
     )
 
     #creating the objects in the canvas
@@ -144,6 +154,7 @@ def test_simulation():
         if not missile2_fired and elapsed_time > 10: #fire the missile after 10 seconds for testing
             missile2.STATUS = "fired"
             missile2.set_target(jet3) #setting the missile's target to the enemy jet for testing
+            missile2.set_target_position(jet3.get_position()) #setting the missile's target position to the enemy jet's position for testing, this is needed because the direct path algorithm needs a target position to work with, and currently the missile only updates its target position when its fired, so we need to set it here for testing
             missile2_fired = True
             simulation.add_log("Missile " + str(missile2.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet3.get_id()))
 
@@ -155,7 +166,7 @@ def test_simulation():
         #updating jets radars first
         for agent in list(agents):
             if agent.get_name() == "jet":
-                agent.update_radar(agents)
+                agent.update_targeting(agents)
 
         #all missiles ask their jet for the target position
         for agent in list(agents):

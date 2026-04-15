@@ -38,7 +38,7 @@ class DirectPath:
         
         #if fuel is not none, increase acceleration
         if self.missile.fuel > 0:
-            self.missile.acceleration = self.missile.get_acceleration()
+            self.missile.acceleration = self.missile.get_base_acceleration()
         else:
             #reduce the missiles speed with its drag until it reaches 0, at which point set it to explode
             if self.missile.velocity > 0:
