@@ -4,7 +4,7 @@ import random
 from algorithms.direct_path import DirectPath
 
 class Missile:
-    def initialise(self, id, acceleration, turn_strength, explosion_radius, detonation_distance, fuel, fuel_rate, targetting_strategy, status, jet, type):
+    def initialise(self, id, acceleration, turn_strength, explosion_radius, detonation_distance, fuel, fuel_rate, targetting_strategy, status, jet, type, radar_range, radar_fov):
         self.ID = id
         #these are the same as the jet its attached to
         self.x = jet.get_position()[0]
@@ -23,14 +23,18 @@ class Missile:
         self.STATUS = status #can be "armed", "fired", "exploded"
         self.jet = jet #the jet object that this missile is attached to, used to get the position and heading of the missile when it is attached to the jet
         self.target = None
+        self.target_position = None
         self.JET_ID = jet.get_id() #the id of the jet that this missile is attached to
         self.TYPE = type #can be "friendly" or "enemy"
         self.NAME = "missile"
+        self.receiving_target_info = True #a boolean to see whether the missile is finding its target based of the jet giving it info, or whether it has to try find it using its own radar instead
         self.canvas_id = None
         self.radar = None
         self.drag = 0.5
         self.hit = False #a boolean to see whether the missile hit the target
         self.explosion_reason = None #a string to see whether the missile killed or ran out of fuel
+        self.missile_radar_range = radar_range
+        self.missile_radar_fov = radar_fov
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time):
@@ -53,7 +57,7 @@ class Missile:
                 #if the directpath hasnt already been initialised @NOTE: might not need to do this
                 
                 direct_path = DirectPath()
-                direct_path.initialise(self, self.target) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                direct_path.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
                 direct_path.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
             #movement logic
             self.velocity += self.acceleration * delta_time
@@ -95,7 +99,37 @@ class Missile:
         elif self.y > 1000:
             self.y = 0
 
-    
+
+
+    #update the missile's target's position
+    def update_target_position(self, agents):
+        #first check if the jet is still giving target info. i.e., ask the jet
+        jet_pos = self.jet.get_current_target_last_known_position()
+        if jet_pos is not None:
+            self.target_position = jet_pos
+            self.receiving_target_info = True
+            return
+        
+        #otherwise using the missile's own radar to try and find that same target
+        self.receiving_target_info = False
+        for agent in agents:
+            if agent.get_name() == "jet" and agent.get_id() == self.target.get_id(): #grabbing the enemy jet object
+                #finding its distance
+                distance = math.sqrt(
+                    (agent.get_position()[0] - self.x) ** 2 + #x position
+                    (agent.get_position()[1] - self.y) ** 2   #y position
+                )
+                #finding the angle to the target
+                difference_x = agent.get_position()[0] - self.x
+                difference_y = agent.get_position()[1] - self.y
+                angle_to_agent = math.degrees(math.atan2(difference_y, difference_x)) % 360 #atan2 gives the angle in radians between the positive x-axis and the point (difference_x, difference_y)
+                angle_difference = (angle_to_agent - self.heading + 360) % 360 #calculating the angle difference between the jet's heading and the angle to the agent
+                if distance <= self.RADAR_RANGE and angle_difference <= self.RADAR_FOV / 2 or angle_difference >= 360 - self.RADAR_FOV / 2:
+                    self.target_position = agent.get_position()
+                    return
+
+
+        #if missile's own radar can't find the target, then keeping last known position
 
     #getters
     #generalised getter

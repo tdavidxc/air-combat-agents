@@ -5,14 +5,16 @@ import time
 
 
 class DirectPath:
-    def initialise(self, missile, target):
+    def initialise(self, missile, target_x, target_y):
         self.missile = missile
-        self.target = target
-        self.target_x, self.target_y = None, None
+        self.target_x = target_x
+        self.target_y = target_y
+
+    def update_target_position(self, x, y):
+        self.target_x = x
+        self.target_y = y
 
     def update(self, delta_time, elapsed_time):
-        #calculate the angle to the target
-        self.target_x, self.target_y = self.target.get_position()
 
         dx = self.target_x - self.missile.x
         dy = self.target_y - self.missile.y

@@ -150,8 +150,23 @@ def test_simulation():
 
 
 
+        #agent loops
+
+        #updating jets radars first
+        for agent in list(agents):
+            if agent.get_name() == "jet":
+                agent.update_radar(agents)
+
+        #all missiles ask their jet for the target position
+        for agent in list(agents):
+            if agent.get_name() == "missile" and agent.STATUS == "fired":
+                agent.update_target_position(agents)
+
+        #everyone moves
         for agent in list(agents): #after testing, i found that looping over a copy of agents is needed because im removing the agents from the original list before I need them
             agent.move(delta_time, elapsed_time) #move the agent based on its own individual movement logic
+
+
 
         simulation.update_objects(canvas, agents)
         window.after(16, simulation_loop) #schedules the next frame after 16 milliseconds, which is approx. 60fps @NOTE: this code was taken from a tutorial on how to make game loops in tkinter
