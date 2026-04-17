@@ -88,11 +88,19 @@ class Missile:
             #vicinity detonation logic
             if self.target is not None:
                 target_x, target_y = self.target.get_position()
-                distance_to_target = math.sqrt(
-                    (target_x - self.x) ** 2 + #x position
-                    (target_y - self.y) ** 2   #y position
-                )
-                if distance_to_target <= self.DETONATION_DISTANCE:
+
+                #also need to check toroidal distance for the wrapping
+                closest_dist = float('inf')
+                for x_offset in [-1000, 0, 1000]:
+                    for y_offset in [-1000, 0, 1000]:
+                        dist = math.sqrt(
+                            ((target_x + x_offset) - self.x) ** 2 +
+                            ((target_y + y_offset) - self.y) ** 2
+                        )
+                        if dist < closest_dist:
+                            closest_dist = dist
+
+                if closest_dist <= self.DETONATION_DISTANCE:
                     self.STATUS = "exploded"
                     self.explosion_reason = "hit"
                     self.hit = True

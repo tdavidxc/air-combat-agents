@@ -16,9 +16,25 @@ class DirectPath:
 
     def update(self, delta_time, elapsed_time):
 
-        dx = self.target_x - self.missile.x
-        dy = self.target_y - self.missile.y
-        target_angle = math.degrees(math.atan2(dx, -dy)) #@NOTE: taken from the simpleBot3 file from labs, changed to make 0 north
+        closest_dx = self.target_x - self.missile.x
+        closest_dy = self.target_y - self.missile.y
+        closest_dist = closest_dx**2 + closest_dy**2
+
+        #tordial distance calculation
+        #https://blog.demofox.org/2017/10/01/calculating-the-distance-between-points-in-wrap-around-toroidal-space/
+        #need to account for the wrapping around of the environment
+        for x_offset in [-1000, 0, 1000]:
+            for y_offset in [-1000, 0, 1000]:
+                dx = (self.target_x + x_offset) - self.missile.x
+                dy = (self.target_y + y_offset) - self.missile.y
+                dist = dx**2 + dy**2
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_dx = dx
+                    closest_dy = dy
+
+
+        target_angle = math.degrees(math.atan2(closest_dx, -closest_dy)) #@NOTE: taken from the simpleBot3 file from labs, changed to make 0 north
 
         #calculate the difference between the current heading and the target angle
         angle_diff = (target_angle - self.missile.get_heading() + 360) % 360

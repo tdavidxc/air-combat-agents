@@ -64,6 +64,10 @@ class Jet:
             self.current_target_last_known_position = self.current_target.get_position()
         #otherwise, it just keeps the last known position
 
+
+
+
+
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time, agents):
         #updated movement logic is to keep the jet within its individual territory which is split half horizontally in the canvas
@@ -131,6 +135,8 @@ class Jet:
         closest_threat = None
         closest_dist = float('inf') #we want the closest thread distance to be infinity so any threat will be closer than this
         closest_is_missile = False #keeping track of what the closest threat is
+        closest_dx = 0 #storing the wrapped dx and dy to account for toroidal wrapping later
+        closest_dy = 0
 
         for agent in agents:
             #filtering for enemies only
@@ -140,33 +146,45 @@ class Jet:
                 continue #also doing nothing because its itself
 
             #anything else is the enemy
-            #finding the distance to the target
-            dist = math.sqrt(
-                (agent.get_position()[0] - self.x) ** 2 +  #the x position
-                (agent.get_position()[1] - self.y) ** 2    #the y position
-            )
+            #finding the distance to the target using toroidal distance calculation
+            ax, ay = agent.get_position()
+            best_distance = float('inf')
+            best_dx = 0
+            best_dy = 0
+            for x_offset in [-1000, 0, 1000]: #checking the original position and the wrapped around positions to account for toroidal wrapping
+                for y_offset in [-1000, 0, 1000]:
+                    dx = (ax + x_offset) - self.x
+                    dy = (ay + y_offset) - self.y
+                    distance = math.sqrt(dx**2 + dy**2)
+                    if distance < best_distance:
+                        best_distance = distance
+                        best_dx = dx
+                        best_dy = dy
 
             #missile evasion logic
-            if agent.get_name() == "missile" and dist < MISSILE_DANGER:
-                if dist < closest_dist:
-                    closest_dist = dist
+            if agent.get_name() == "missile" and best_distance < MISSILE_DANGER:
+                if best_distance < closest_dist:
+                    closest_dist = best_distance
                     closest_threat = agent
                     closest_is_missile = True
+                    closest_dx = best_dx
+                    closest_dy = best_dy
             #jet logic to decide whether to run, engage, or approach
-            elif agent.get_name() == "jet" and not closest_is_missile and dist < ENGAGE_RADIUS: #no need to redo check
-                if dist < closest_dist:
-                    closest_dist = dist
+            elif agent.get_name() == "jet" and not closest_is_missile and best_distance < ENGAGE_RADIUS: #no need to redo check
+                if best_distance < closest_dist:
+                    closest_dist = best_distance
                     closest_threat = agent
                     closest_is_missile = False
+                    closest_dx = best_dx
+                    closest_dy = best_dy
 
         #if no threats detected, returning None
         if closest_threat is None:
             return None
         
 
-        #getting target position to decide evasion maneuver
-        tx, ty = closest_threat.get_position()
-        screen_angle = math.degrees(math.atan2(ty - self.y, tx - self.x))
+        #getting target position to decide evasion maneuver using the wrapped dx and dy
+        screen_angle = math.degrees(math.atan2(closest_dy, closest_dx))
         angle_to_threat = self.screen_angle_to_heading(screen_angle)
 
         #@NOTE: this is where you decide how to evade a missile
