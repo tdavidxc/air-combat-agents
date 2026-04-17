@@ -18,7 +18,7 @@ def test_simulation():
     #example jets
     jet1.initialise(
         1,          #id
-        900,        #x position
+        500,        #x position
         700,        #y position [lower = higher on the screen]
         90,         #heading
         50,          #velocity (recommended for testing: 50)
@@ -32,8 +32,8 @@ def test_simulation():
     jet2 = Jet()
     jet2.initialise(
         2,
-        300,
         700,
+        200,
         270,
         50,
         0.0,
@@ -70,7 +70,7 @@ def test_simulation():
         "armed",     #status
         jet1,          #jet that the missile is attached to
         "friendly",    #type
-        400,           #radar range (recommended for testing: 400)
+        1000,           #radar range (recommended for testing: 400)
         360            #radar fov (recommended for testing: 360 [means full view])
     )
 
