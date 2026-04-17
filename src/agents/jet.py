@@ -65,10 +65,42 @@ class Jet:
         #otherwise, it just keeps the last known position
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
-    def move(self, delta_time, elapsed_time):
+    def move(self, delta_time, elapsed_time, agents):
+        #updated movement logic is to keep the jet within its individual territory which is split half horizontally in the canvas
+        canvas_mid = 500 #the middle of the canvas
+        if self.TYPE == "friendly":
+            zone_center_y = 250 #the center of the friendly zone
+            boundary_min = 0
+            boundary_max = 500
+        if self.TYPE == "enemy":
+            zone_center_y = 750 #the center of the enemy zone
+            boundary_min = 500
+            boundary_max = 1000
+        
+        #updating so evasion logic comes before boundary logic
+        evasion = self.get_evasion_maneuver(agents, delta_time)
+        if evasion is not None:
+            self.heading += evasion
+
+        #now applying a weaker boundary correction
+        #adding a soft boundary steering to keep the jets within their territory
+        elif self.y < boundary_min + 100 or self.y > boundary_max - 100: #checks if near boundary (100 is the boundary margin)
+            dy = zone_center_y - self.y
+            dx = 0 #we really only want to steer vertically because the sides are looped around
+
+            target_angle = math.degrees(math.atan2(dy, dx))
+            raw_difference = (target_angle - self.heading + 360) % 360
+            if raw_difference > 180:
+                raw_difference -= 360 #converting the angle difference between -180 to 180 for easier calculating
+            max_turn = self.turn_rate * delta_time
+            self.heading += max(-max_turn, min(max_turn, raw_difference))
+
+        #fallback wandering with a small nudge only, otherwise the jet wandering is too aggressive
+        else:
+            self.heading += random.uniform(-1, 1) * self.turn_rate * 0.1 * delta_time #no threats, wander normally
+
         #simple movement logic for the jet right now, it moves with the initialised characteristics
         self.velocity += self.acceleration * delta_time
-        self.heading += self.turn_rate * delta_time
         self.heading %= 360 #modding with 360 to keep the heading within 360 degrees
 
         #move in the direction of the heading at the current v
@@ -82,10 +114,99 @@ class Jet:
             self.x = 1000
         elif self.x > 1000:
             self.x = 0
+        #not doing y wrapping because I want jets to stay in their territories
         if self.y < 0:
             self.y = 1000
         elif self.y > 1000:
             self.y = 0
+
+
+    #this method returns the heading depending on what zone its in: too close to a threat = run, in firing range = hold and shoot, far away = approach
+    #@NOTE: need to add logic where the jet can only see if its within radar range and fov. Right now, it can evade any threat
+    def get_evasion_maneuver(self, agents, delta_time):
+        DANGER_RADIUS = 300 #if any enemy is within this radius, its a danger so we run
+        ENGAGE_RADIUS = 400 #prefered fighting distance
+        MISSILE_DANGER = 500 #if any missile is within this radius, its a danger so we run too
+
+        closest_threat = None
+        closest_dist = float('inf') #we want the closest thread distance to be infinity so any threat will be closer than this
+        closest_is_missile = False #keeping track of what the closest threat is
+
+        for agent in agents:
+            #filtering for enemies only
+            if agent.get_type() == self.TYPE:
+                continue #doing nothing
+            if agent.get_id() == self.ID:
+                continue #also doing nothing because its itself
+
+            #anything else is the enemy
+            #finding the distance to the target
+            dist = math.sqrt(
+                (agent.get_position()[0] - self.x) ** 2 +  #the x position
+                (agent.get_position()[1] - self.y) ** 2    #the y position
+            )
+
+            #missile evasion logic
+            if agent.get_name() == "missile" and dist < MISSILE_DANGER:
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_threat = agent
+                    closest_is_missile = True
+            #jet logic to decide whether to run, engage, or approach
+            elif agent.get_name() == "jet" and not closest_is_missile and dist < ENGAGE_RADIUS: #no need to redo check
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_threat = agent
+                    closest_is_missile = False
+
+        #if no threats detected, returning None
+        if closest_threat is None:
+            return None
+        
+
+        #getting target position to decide evasion maneuver
+        tx, ty = closest_threat.get_position()
+        screen_angle = math.degrees(math.atan2(ty - self.y, tx - self.x))
+        angle_to_threat = self.screen_angle_to_heading(screen_angle)
+
+        #@NOTE: this is where you decide how to evade a missile
+        if closest_is_missile:
+            #turning perpendicular to the missile's trajectory to try and bleed its energy like in real life
+            dodge_angle = (angle_to_threat + 90) % 360
+            raw_diff = (dodge_angle - self.heading + 360) % 360
+            if raw_diff > 180:
+                raw_diff -= 360
+            max_turn = self.turn_rate * delta_time
+            return max(-max_turn, min(max_turn, raw_diff))
+        
+        #@NOTE: theses are the logics on how to handle other jets
+        #if the jet is too close, we need to run away from it
+        if closest_dist < DANGER_RADIUS:
+            run_angle = (angle_to_threat + 180) % 360
+            raw_diff = (run_angle - self.heading + 360) % 360
+            if raw_diff > 180:
+                raw_diff -= 360
+            max_turn = self.turn_rate * delta_time
+            return max(-max_turn, min(max_turn, raw_diff))
+        #if the jet is at a good distance, hold the distance by orbitting like the default maneouver
+        if closest_dist < ENGAGE_RADIUS:
+            orbit_angle = (angle_to_threat + 90) % 360 #circling around them
+            raw_diff = (orbit_angle - self.heading + 360) % 360
+            if raw_diff > 180:
+                raw_diff -= 360
+            max_turn = self.turn_rate * delta_time
+            return max(-max_turn, min(max_turn, raw_diff))
+        #if the jet is far away, close in
+        raw_diff = (angle_to_threat - self.heading + 360) % 360
+        if raw_diff > 180:
+            raw_diff -= 360
+        max_turn = self.turn_rate * delta_time
+        return max(-max_turn, min(max_turn, raw_diff))
+
+
+
+    def screen_angle_to_heading(self, screen_angle):
+        return (90 - screen_angle) % 360
 
     #getters
     #generalised getter

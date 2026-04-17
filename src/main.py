@@ -16,7 +16,7 @@ def test_simulation():
 
 
     #test the creation of agents here
-    #standard jet test
+    #standard jet test  
     jet1 = Jet()
     #example jets
     jet1.initialise(
@@ -67,7 +67,7 @@ def test_simulation():
         150,          #turn strength (recommended for testing: 50+, often 3x aircraft turn rate)
         65,           #explosion radius #for now the pixel size of the explosion png [2x pixel size because of resize] (recommended for testing: greater than detonation distance)
         50,           #detonation distance (recommended for testing: 50)
-        5.0,          #fuel (recommended for testing: 5.0)
+        10.0,          #fuel (recommended for testing: 5.0)
         1.0,          #fuel rate (recommended for testing: 1.0)
     "direct_path",            #targetting strategy
         "armed",     #status
@@ -84,7 +84,7 @@ def test_simulation():
         150,
         65,
         50,
-        5.0,
+        10.0,
         1.0,
         "direct_path",
         "armed",
@@ -180,7 +180,7 @@ def test_simulation():
 
         #everyone moves
         for agent in list(agents): #after testing, i found that looping over a copy of agents is needed because im removing the agents from the original list before I need them
-            agent.move(delta_time, elapsed_time) #move the agent based on its own individual movement logic
+            agent.move(delta_time, elapsed_time, agents) #move the agent based on its own individual movement logic
 
 
 

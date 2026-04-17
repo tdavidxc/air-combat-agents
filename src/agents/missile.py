@@ -41,7 +41,7 @@ class Missile:
         self.whos_radar = "jet"
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
-    def move(self, delta_time, elapsed_time):
+    def move(self, delta_time, elapsed_time, agents):
 
         if self.STATUS == "exploded":
             return #returning early if the missile is exploded so the simulation can handle the rest
