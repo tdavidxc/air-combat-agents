@@ -2,6 +2,7 @@ import tkinter as tk
 import math
 import random
 from algorithms.direct_path import DirectPath
+from algorithms.predictive_path import PredictivePath
 
 class Missile:
     def initialise(self, id, acceleration, turn_strength, explosion_radius, detonation_distance, fuel, fuel_rate, targetting_strategy, status, jet, type, radar_range, radar_fov):
@@ -57,6 +58,7 @@ class Missile:
         #below is just the set movements of the missile (only run if fired, otherwise the missile will stay attached to the jet and invisible)
         if self.STATUS == "fired":
             #update this logic to decide what the missile does when fired (changed depending on targetting strategy @NOTE: to be implemented)
+            #choosing the targetting strategy
             if self.TARGETTING_STRATEGY == "direct_path":
                 #if the directpath hasnt already been initialised @NOTE: might not need to do this
                 
@@ -65,11 +67,26 @@ class Missile:
                     self.targetting_strategy_object = DirectPath()
                     if self.target_position is not None:
                         self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
-                    
 
                 if self.target_position is not None:
-                    self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the direct path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                    self.targetting_strategy_object.update_target_position(self.target_position[0], self.target_position[1]) 
                     self.targetting_strategy_object.update(delta_time, elapsed_time) #updating the missile's turn rate based on the direct path algorithm
+            
+            if self.TARGETTING_STRATEGY == "predictive_path":
+                if not self.targetting_strategy_initialised:
+                    self.targetting_strategy_initialised = True
+                    self.targetting_strategy_object = PredictivePath()
+                    if self.target_position is not None:
+                        self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the predictive path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+
+                if self.target_position is not None:
+                    self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the predictive path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
+                    #also need to update the target's info for the predictive path algorithm
+                    if self.receiving_target_info: #if receiving target info from the jet, use that to update the target info in the predictive path algorithm
+                        self.targetting_strategy_object.update_target_info(self.target.get_heading(), self.target.get_velocity())
+                    self.targetting_strategy_object.update(delta_time, elapsed_time) #updating the missile's turn rate based on the predictive path algorithm
+            
+            
             #movement logic
             self.velocity += self.acceleration * delta_time
             self.heading += self.turn_rate * delta_time

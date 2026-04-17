@@ -69,7 +69,7 @@ def test_simulation():
         50,           #detonation distance (recommended for testing: 50)
         10.0,          #fuel (recommended for testing: 5.0)
         1.0,          #fuel rate (recommended for testing: 1.0)
-    "direct_path",            #targetting strategy
+    "predictive_path",            #targetting strategy [can be: "direct_path", "predictive_path"]
         "armed",     #status
         jet1,          #jet that the missile is attached to
         "friendly",    #type
@@ -155,13 +155,13 @@ def test_simulation():
             missile1.STATUS = "fired"
             missile1.set_target(jet2) #setting the missile's target to the enemy jet for testing
             missile1_fired = True
-            simulation.add_log("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()))
+            simulation.add_log("Missile " + str(missile1.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet2.get_id()) + " with strategy: " + missile1.get_targetting_strategy())
         if not missile2_fired and elapsed_time > 10: #fire the missile after 10 seconds for testing
             missile2.STATUS = "fired"
             missile2.set_target(jet3) #setting the missile's target to the enemy jet for testing
             missile2.set_target_position(jet3.get_position()) #setting the missile's target position to the enemy jet's position for testing, this is needed because the direct path algorithm needs a target position to work with, and currently the missile only updates its target position when its fired, so we need to set it here for testing
             missile2_fired = True
-            simulation.add_log("Missile " + str(missile2.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet3.get_id()))
+            simulation.add_log("Missile " + str(missile2.get_id()) + " fired at time: " + str(int(elapsed_time)) + " seconds, targeting Jet " + str(jet3.get_id()) + " with strategy: " + missile2.get_targetting_strategy())
 
 
 
