@@ -12,6 +12,9 @@ def test_simulation():
     simulation_length = 30 #length of simulation in seconds
     window = tk.Tk()
     canvas = simulation.initialise(window, 1000, 1000)
+    
+
+
     #test the creation of agents here
     #standard jet test
     jet1 = Jet()

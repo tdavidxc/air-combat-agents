@@ -8,8 +8,13 @@ class Simulation:
     def initialise(self, window, width, height):
         print("Initialising simulation")
         window.resizable(False, False)
-        canvas = tk.Canvas(window, width=width, height=height, bg='white')
+        canvas = tk.Canvas(window, width=width, height=height, highlightthickness=0)
         canvas.pack()
+
+        #splitting the window into two sections to depict friendly and enemy territory -> https://stackoverflow.com/questions/67448917/how-to-change-background-color-for-a-specific-portion-of-window-python-tkinte
+        canvas.create_rectangle(0,0, width, height/2, fill="#ff6b6b", outline="") #enemy territory
+        canvas.create_rectangle(0,height/2, width, height, fill="#6babff", outline="") #friendly territory
+
         self.pil_images = {} #storing original PIL images by object id for modification
         self.current_images = {} 
         self.log = [] #storing the log of the simulation (the report of the simulation)
