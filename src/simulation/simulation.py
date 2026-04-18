@@ -28,16 +28,22 @@ class Simulation:
             #if the object is a jet and is friendly, load the friendly jet png at the location initialised
             if current_object.get_name() == "jet":
                 if current_object.get_type() == "friendly":
-                    img = Image.open("agents\\models\\friendly_jet.png").resize((60, 60))
+                    img = Image.open("agents\\models\\new\\blue jet w fire.png").resize((60, 60))
                 elif current_object.get_type() == "enemy":
-                    img = Image.open("agents\\models\\enemy_jet.png").resize((60, 60))
+                    img = Image.open("agents\\models\\new\\red jet w fire.png").resize((60, 60))
             
             #if the object is a missile
             if current_object.get_name() == "missile":
                 if current_object.get_type() == "friendly":
-                    img = Image.open("agents\\models\\friendly_missile.png").resize((4, 20))
+                    if current_object.get_acceleration() > 0:
+                        img = Image.open("agents\\models\\new\\blue missile ver 2 w fire.png").resize((4, 20))
+                    else:
+                        img = Image.open("agents\\models\\new\\blue missile ver 2.png").resize((4, 20))
                 elif current_object.get_type() == "enemy":
-                    img = Image.open("agents\\models\\enemy_missile.png").resize((4, 20))
+                    if current_object.get_acceleration() > 0:
+                        img = Image.open("agents\\models\\new\\red missile ver 2 w fire.png").resize((4, 20))
+                    else:
+                        img = Image.open("agents\\models\\new\\red missile ver 2.png").resize((4, 20))
             
             self.pil_images[current_object.get_id()] = img
                 
@@ -124,20 +130,29 @@ class Simulation:
                         objects.remove(jet)
 
                     #display the explosion at agents\\models\\explosion.png for 1 seconds
-                    explosion_img = Image.open("agents\\models\\explosion.png").resize((60, 60))
-                    explosion_image = ImageTk.PhotoImage(explosion_img)
-                    explosion_id = canvas.create_image(
-                        current_object.get_position()[0], 
-                        current_object.get_position()[1], 
-                        image=explosion_image
-                    )
-                    #keeping the reference alive
-                    self.current_images["explosion_" + str(current_object.get_id())] = explosion_image
+                    self.animate_explosion(canvas, current_object.get_position(), 300) #animating the explosion with a frame change every 300 milliseconds
 
-                    #removing the explosion after 1 second
-                    canvas.after(1000, lambda eid=explosion_id: canvas.delete(eid)) #what lambda does is create a function without actually defining it. using eid to make sure multiple explosions dont mean any other explosion functions get trampled on
+    def animate_explosion(self, canvas, position, time_interval):
+        big_explosion_image = Image.open("agents\\models\\new\\biggest explosion.png").resize((100, 100))
+        medium_explosion_image = Image.open("agents\\models\\new\\middle child.png").resize((70, 70))
+        small_explosion_image = Image.open("agents\\models\\new\\smallest explosion.png").resize((40, 40))
+        explosion_images = [big_explosion_image, medium_explosion_image, small_explosion_image]
+        explosion_photo_images = [ImageTk.PhotoImage(img) for img in explosion_images]
+        explosion_id = canvas.create_image(position[0], position[1], image=explosion_photo_images[0])
+        
+        #unique keys
+        ref_key = "explosion_" + str(id(explosion_id))
+        self.current_images[ref_key] = explosion_photo_images
 
-
+        def animate(index):
+            if index < len(explosion_photo_images):
+                canvas.itemconfig(explosion_id, image=explosion_photo_images[index])
+                canvas.after(time_interval, lambda: animate(index + 1))
+            else:
+                canvas.delete(explosion_id)
+                if ref_key in self.current_images:
+                    del self.current_images[ref_key] #the del keyword can be used to remove a key from a dictionary, this is to prevent memory leaks by keeping references to images that are no longer needed
+        animate(1) #animate() is then called with the next index to start the animation
 
 
     def rotate_object(self, canvas, object, angle):
