@@ -259,6 +259,7 @@ class Jet:
         return self.radar_targets
     def get_current_target_last_known_position(self):
         return self.current_target_last_known_position
+        
     
     #setters
     def set_acceleration(self, acceleration):
