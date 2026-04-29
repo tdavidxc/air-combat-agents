@@ -41,7 +41,29 @@ class QLearner:
     #a method to get the current state of the environment, given all the info
     #this method replaces get_box() from the q learning code in the repo, adapted to work for mine
     def get_state(self, distance_to_target, missiles_in_flight, threat_level):
-        #@TODO
+        #the first feature
+        if distance_to_target < 200:
+            state = 0 #the jet is close to the target
+        elif distance_to_target < 500:
+            state = 1 #the jet is at a middle distance from target
+        else:
+            state = 2 #the jet is far
+
+        #the second feature
+        if missiles_in_flight == 0:
+            state += 0 #no missiles in the air from the jet
+        elif missiles_in_flight <= 2:
+            state += 3 #1 or 2 missiles in the air
+        else:
+            state += 6 #3 or more missiles in the air
+
+        #the third feature
+        if not threat_level:
+            state += 0 #the jet is safe
+        else:
+            state += 9 #the jet is threatened
+
+        return state
 
     
 

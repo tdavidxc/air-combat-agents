@@ -21,6 +21,11 @@ class Jet:
         self.radar_targets = []
         self.datalink = None
 
+        #the q learning decision
+        self.q_learner = None #if using the q learner, then this is set
+        self.is_training = False #boolean to track whether its training: false if its evaluating
+        self.last_fire_state = None #need this to track what state the jet was in when it was last fired
+
 
     #method that scans for targets within radar range and fov and returns a list of targets that are within the radar range
     #note that even if the target is lost from the radar, the missile is already launched with the target's last known pos. so the missile will still try to use its own radar
@@ -291,6 +296,12 @@ class Jet:
             return agent
         
         return None
+    
+
+
+    #try fire missiles method but for q learning
+    def try_fire_missiles_ql(self, agents):
+        
     
 
     def screen_angle_to_heading(self, screen_angle):
