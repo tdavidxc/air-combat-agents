@@ -1,4 +1,3 @@
-import tkinter as tk
 import math
 import random
 from algorithms.direct_path import DirectPath
@@ -40,6 +39,8 @@ class Missile:
         self.RADAR_RANGE = radar_range
         self.RADAR_FOV= radar_fov
         self.whos_radar = "jet"
+        self.ticks_since_fired = 0
+        self.has_cleared_jet = False
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
     def move(self, delta_time, elapsed_time, agents):
@@ -59,6 +60,7 @@ class Missile:
         if self.STATUS == "fired":
             #update this logic to decide what the missile does when fired (changed depending on targetting strategy @NOTE: to be implemented)
             #choosing the targetting strategy
+            self.ticks_since_fired += 1
             if self.TARGETTING_STRATEGY == "direct_path":
                 #if the directpath hasnt already been initialised @NOTE: might not need to do this
                 
@@ -80,13 +82,16 @@ class Missile:
                         self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the predictive path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
 
                 if self.target_position is not None:
-                    self.targetting_strategy_object.initialise(self, self.target_position[0], self.target_position[1]) #initialising the predictive path algorithm with the missile and the target position (currently set to the jet's position for testing, but will be changed to the enemy jet's position when implemented)
                     #also need to update the target's info for the predictive path algorithm
                     if self.receiving_target_info: #if receiving target info from the jet, use that to update the target info in the predictive path algorithm
                         self.targetting_strategy_object.update_target_info(self.target.get_heading(), self.target.get_velocity())
                     self.targetting_strategy_object.update(delta_time, elapsed_time) #updating the missile's turn rate based on the predictive path algorithm
             
             
+            #separation logic
+            separation_nudge = self.apply_separation(agents)
+            self.turn_rate += separation_nudge * 2 #0.3 is just to make it weaker than targetting
+
             #movement logic
             self.velocity += self.acceleration * delta_time
             self.heading += self.turn_rate * delta_time
@@ -101,6 +106,8 @@ class Missile:
                 self.fuel -= self.FUEL_RATE * delta_time
             if(self.fuel <= 0):
                 self.fuel = 0
+                self.STATUS = "exploded"
+                self.explosion_reason = "fuel"
 
             #vicinity detonation logic
             if self.target is not None:
@@ -121,6 +128,13 @@ class Missile:
                     self.STATUS = "exploded"
                     self.explosion_reason = "hit"
                     self.hit = True
+
+            #checking if the missile has cleared the jet it was fired from
+            if not self.has_cleared_jet:
+                jet_x, jet_y = self.jet.get_position()
+                dist_to_jet = math.sqrt((jet_x - self.x) ** 2 + (jet_y - self.y) ** 2)
+                if dist_to_jet > 50: #need to test this but i think 50 is enough
+                    self.has_cleared_jet = True
 
 
 
@@ -152,6 +166,16 @@ class Missile:
             self.whos_radar = "jet"
             return
         
+        #then try the jets datalink if it exists
+        if hasattr(self.jet, 'datalink') and self.jet.datalink is not None:
+            known_enemies = self.jet.datalink.get_known_enemies()
+            if self.target.get_id() in known_enemies:
+                self.target_position = known_enemies[self.target.get_id()]["position"]
+                self.receiving_target_info = True
+                self.whos_radar = "datalink"
+                return
+
+
         #otherwise using the missile's own radar to try and find that same target
         self.receiving_target_info = False
         self.whos_radar = "missile"
@@ -174,6 +198,66 @@ class Missile:
 
         #if missile's own radar can't find the target, then keeping last known position
         self.whos_radar = None
+
+
+
+    #method to apply a separation between missiles and friendly jets
+    def apply_separation(self, agents):
+        #only applies if its fired and moving
+        if self.STATUS != "fired":
+            return 0.0
+        
+        SEPARATION_RADIUS = 60
+        SEPARATION_STRENGTH = self.get_turn_strength() #the turn strength of the missile is whats used to decide how hard they push away
+
+        push_x = 0.0
+        push_y = 0.0
+
+        for agent in agents:
+            #missile avoid everything except enemy jets unless its target is an enemy missile, it wont avoid that either
+            if agent.get_id() == self.ID:
+                continue
+            if agent.get_name() == "jet" and agent.get_type() != self.TYPE:
+                continue
+
+            dist = math.sqrt(
+                (agent.get_position()[0] - self.x) ** 2 +
+                (agent.get_position()[1] - self.y) ** 2
+            )
+
+            if dist < SEPARATION_RADIUS and dist > 0: #no chance its negative but still
+                #push away from the agent
+                diff_x = self.x - agent.get_position()[0]
+                diff_y = self.y - agent.get_position()[1]
+                strength = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS
+                push_x += (diff_x / dist) * strength
+                push_y += (diff_y / dist) * strength
+        
+        if push_x == 0 and push_y == 0:
+            return 0.0
+        
+        #the push vector needs to be converted into a heading
+        push_angle = math.degrees(math.atan2(push_x, -push_y))
+        angle_diff = (push_angle - self.heading + 360) % 360
+        if angle_diff > 180:
+            angle_diff -= 360
+
+        return max(-SEPARATION_STRENGTH, min(SEPARATION_STRENGTH, angle_diff))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     #getters
     #generalised getter
@@ -243,9 +327,7 @@ class Missile:
     def set_status(self, status):
         self.STATUS = status
     def set_target(self, target):
-        #the target cannot be changed after its fired
-        if self.target is None:
-            self.target = target
+        self.target = target
     def set_target_position(self, target_position):
         self.target_position = target_position
     def set_radar(self, radar):

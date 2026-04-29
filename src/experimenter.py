@@ -1,27 +1,24 @@
 # This file handles running experiments and collecting results.
 # Run this file directly to open the simulation configuration UI.
 # Location: air-combat-agents/experiments/experimenter.py
-
 import sys
 import os
 import random
-from src.simulation.simulation import Simulation
-from src.agents.jet import Jet
-from src.agents.missile import Missile
-
+import csv
+from datetime import datetime
+from simulation.simulation import Simulation
+from agents.jet import Jet
+from agents.missile import Missile
+from algorithms.datalink import Datalink
 
 # the src folder needs to be on the path so imports inside missile.py, jet.py etc. work correctly
 # experimenter.py lives in experiments/, src/ is one level up then into src/
-SRC_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
 
-import csv
-from datetime import datetime
+
 
 
 #results folder
-RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
+RESULTS_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "experiments", "results")
 
 #Experimenter settings that need to be set before running the experimetn
 NUM_RUNS = 10
@@ -30,20 +27,20 @@ DELTA_TIME = 0.016 #1/60 = 0.016 to simulate 60 "frames" per second if needed
 SEED = 42 #not needed right now, but when needed for randomness and reproducibility
 
 #friendly team
-F_NUM_JETS = 1
-F_NUM_MISSILES_PER_JET = 5
-F_STRATEGY = "direct_path" #options: "direct_path", "predictive_path"
-F_DATALINK = False #Not implemented yet
+F_NUM_JETS = 3
+F_NUM_MISSILES_PER_JET = 3
+F_STRATEGY = "predictive_path" #options: "direct_path", "predictive_path"
+F_DATALINK = True
 #enemy team
 E_NUM_JETS = 3
-E_NUM_MISSILES_PER_JET = 5
+E_NUM_MISSILES_PER_JET = 3
 E_STRATEGY = "predictive_path"
-E_DATALINK = False #Not implemented yet
+E_DATALINK = False
 
 #builds the actual agents based on the above settings from the individual object classes
 #change the individual agent characteristics here as needed
-def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
-                                e_num_jets, e_num_missiles, e_strategy, e_datalink):
+def build_agents(seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
+                        e_num_jets, e_num_missiles, e_strategy, e_datalink):
 
 
     random.seed(seed)
@@ -63,11 +60,13 @@ def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
             acceleration = 0.0,
             turn_rate    = 50,
             type         = "friendly",
-            radar_range  = 1500,  # large enough to always detect across the map
-            radar_fov    = 360,
+            radar_range  = 300,  # large enough to always detect across the map
+            radar_fov    = 120,
         )
         friendly_jets.append(jet)
         agents.append(jet)
+        if f_datalink is not None:
+            jet.set_datalink(f_datalink)
         agent_id += 1
 
     # ── enemy jets ─────────────────────────────────────────────────────────
@@ -83,11 +82,13 @@ def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
             acceleration = 0.0,
             turn_rate    = 50,
             type         = "enemy",
-            radar_range  = 1500,
-            radar_fov    = 360,
+            radar_range  = 300,
+            radar_fov    = 120,
         )
         enemy_jets.append(jet)
         agents.append(jet)
+        if e_datalink is not None:
+            jet.set_datalink(e_datalink)
         agent_id += 1
 
     # ── friendly missiles (armed and attached to their jet) ────────────────
@@ -100,14 +101,14 @@ def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
                 turn_strength       = 150,
                 explosion_radius    = 65,
                 detonation_distance = 50,
-                fuel                = 10.0,
+                fuel                = 20.0,
                 fuel_rate           = 1.0,
                 targetting_strategy = f_strategy,
                 status              = "armed",
                 jet                 = jet,
                 type                = "friendly",
-                radar_range         = 1500,
-                radar_fov           = 360,
+                radar_range         = 150,
+                radar_fov           = 60,
             )
             agents.append(missile)
             agent_id += 1
@@ -122,14 +123,14 @@ def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
                 turn_strength       = 150,
                 explosion_radius    = 65,
                 detonation_distance = 50,
-                fuel                = 10.0,
+                fuel                = 20.0,
                 fuel_rate           = 1.0,
                 targetting_strategy = e_strategy,
                 status              = "armed",
                 jet                 = jet,
                 type                = "enemy",
-                radar_range         = 1500,
-                radar_fov           = 360,
+                radar_range         = 150,
+                radar_fov           = 60,
             )
             agents.append(missile)
             agent_id += 1
@@ -138,15 +139,15 @@ def build_agents(self, seed, f_num_jets, f_num_missiles, f_strategy, f_datalink,
 
 
 #What gets called to do a single experiment (useful for doing multiple)
-def run_single_simulation(self, agents, ticks, delta_time):
+def run_single_simulation(agents, ticks, delta_time, friendly_datalink=None, enemy_datalink=None):
     sim = Simulation()
     #running a "Headless" sim which doesnt show the tkinter application
-    results = sim.run_headless(agents, ticks, delta_time)
+    results = sim.run_headless(agents, ticks, delta_time, friendly_datalink, enemy_datalink)
     return results
 
 
 #saving the results to the csv
-def save_results(self, all_results, f_strategy, e_strategy):
+def save_results(all_results, f_strategy, e_strategy):
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename  = f"results_{f_strategy}_vs_{e_strategy}_{timestamp}.csv"
@@ -156,9 +157,9 @@ def save_results(self, all_results, f_strategy, e_strategy):
             writer = csv.DictWriter(f, fieldnames=list(all_results[0].keys()))
             writer.writeheader()
             writer.writerows(all_results)
-        self.log(f"> Saved: {filepath}")
+        print(f"> Saved: {filepath}")
     except Exception as e:
-        self.log(f"> [ERROR] Could not save: {e}")
+        print(f"> [ERROR] Could not save: {e}")
 
 
 
@@ -176,12 +177,22 @@ def main():
     
     for i in range(NUM_RUNS):
         print("Simulation " + str(i+1) + "/" + str(NUM_RUNS))
+
+        if F_DATALINK:
+            friendly_datalink = Datalink("friendly")
+        else:
+            friendly_datalink = None
+        if E_DATALINK:
+            enemy_datalink = Datalink("enemy")
+        else:
+            enemy_datalink = None
         
         #using a different seed for each run, but based on the initial seed so they arent the same
-        agents = build_agents(SEED + i, F_NUM_JETS, F_NUM_MISSILES_PER_JET, F_STRATEGY, F_DATALINK,
-                                    E_NUM_JETS, E_NUM_MISSILES_PER_JET, E_STRATEGY, E_DATALINK
+        agents = build_agents((SEED + i), 
+                            F_NUM_JETS, F_NUM_MISSILES_PER_JET, F_STRATEGY, friendly_datalink,
+                            E_NUM_JETS, E_NUM_MISSILES_PER_JET, E_STRATEGY, enemy_datalink
         )
-        results = run_single_simulation(agents, TICKS_PER_SIM, DELTA_TIME)
+        results = run_single_simulation(agents, TICKS_PER_SIM, DELTA_TIME, friendly_datalink, enemy_datalink)
         results["run_index"] = i + 1
         total_results.append(results)
 

@@ -19,6 +19,7 @@ class Jet:
         self.current_target = None
         self.current_target_last_known_position = None #(x,y) of target
         self.radar_targets = []
+        self.datalink = None
 
 
     #method that scans for targets within radar range and fov and returns a list of targets that are within the radar range
@@ -39,7 +40,7 @@ class Jet:
         return targets
     
     #given a list of targets, select a target to engage with
-    def select_target(self, targets):
+    def select_target(self, targets, agents):
         #scanning for targets
 
         #if we have a target, check if its still in the radar range
@@ -48,24 +49,50 @@ class Jet:
                 return self.current_target
             
         #if we dont have a target or our target is not in our radar range anymore, select a new target from the targets array as a random target for now, but we can select closest etc.
-        if targets:
-            self.current_target = random.choice(targets)
-        else:
+        #updated so now it also accounts for how many missiles are heading towards the target to try and balance the missiles between all enemies
+        if not targets:
             self.current_target = None
+            return None
+        
+        #picking the target with the fewest missiles
+        target_counts = {}
+        for t in targets:
+            target_counts[t] = 0
+        
+        for agent in agents:
+            if agent.get_name() != "missile" or agent.STATUS != "fired":
+                continue
+            if agent.get_target() in target_counts:
+                target_counts[agent.get_target()] += 1
+
+        #pick the least targetted enemy
+        self.current_target = min(target_counts, key=target_counts.get)
         return self.current_target
+
     
     #this method uses the above 2 to do the scan and update the target position
     def update_targeting(self, agents):
+        #forgetting the dead targets
+        if self.current_target is not None and self.current_target not in agents:
+            self.current_target = None
+            self.current_target_last_known_position = None
+
         targets = self.scan_for_targets(agents)
-        self.select_target(targets)
+
+        #merging with datalink information
+        if hasattr(self, 'datalink') and self.datalink is not None:
+            known_enemies = self.datalink.get_known_enemy_jets()
+            for id, info in known_enemies.items():
+                obj = info["object"]
+                if obj not in targets and obj in agents: #only adding it if it doesnt exist in the targets and if its a real object
+                    targets.append(obj)
+
+        self.select_target(targets, agents)
 
         #update the last known pos if we can see the target
         if self.current_target is not None:
             self.current_target_last_known_position = self.current_target.get_position()
         #otherwise, it just keeps the last known position
-
-
-
 
 
     #@NOTE: delta_time is the time since last frame which is a nonlocal variable passed through from main.py
@@ -100,8 +127,9 @@ class Jet:
             self.heading += max(-max_turn, min(max_turn, raw_difference))
 
         #fallback wandering with a small nudge only, otherwise the jet wandering is too aggressive
+        #The random uniform allows for some random movement
         else:
-            self.heading += random.uniform(-1, 1) * self.turn_rate * 0.1 * delta_time #no threats, wander normally
+            self.heading += random.uniform(-1, 1) * self.turn_rate * 0.2 * delta_time #no threats, wander normally
 
         #simple movement logic for the jet right now, it moves with the initialised characteristics
         self.velocity += self.acceleration * delta_time
@@ -170,6 +198,14 @@ class Jet:
                     closest_dx = best_dx
                     closest_dy = best_dy
             #jet logic to decide whether to run, engage, or approach
+            if agent.get_name() == "jet" and agent.get_type() == self.TYPE and best_distance < 50:
+                #too close to a friendly jet, so we turn away to avoid collision
+                if best_distance < closest_dist and not closest_is_missile:
+                    closest_dist = best_distance
+                    closest_threat = agent
+                    closest_is_missile = False
+                    closest_dx = best_dx
+                    closest_dy = best_dy
             elif agent.get_name() == "jet" and not closest_is_missile and best_distance < ENGAGE_RADIUS: #no need to redo check
                 if best_distance < closest_dist:
                     closest_dist = best_distance
@@ -222,6 +258,40 @@ class Jet:
         return max(-max_turn, min(max_turn, raw_diff))
 
 
+    #firing missile logic belogns in the jet 
+    def try_fire_missiles(self, agents):
+        #if there are no targets currently, no need to fire
+        if self.current_target is None or self.current_target not in agents:
+            return None
+        
+        #if there is already a missile from this jet, heading towards this target, then no need to fire
+        for agent in agents:
+            if agent.get_name() != "missile":
+                continue
+            if agent.JET_ID != self.ID:
+                continue
+            if agent.STATUS != "fired":
+                continue
+            if agent.get_target() == self.current_target:
+                return None
+
+        #fire the first armed missile
+        for agent in agents:
+            if agent.get_name() != "missile":
+                continue
+            if agent.JET_ID != self.ID:
+                continue
+            if agent.STATUS != "armed":
+                continue
+
+            #fire the missile because it passed all checks
+            agent.STATUS = "fired"
+            agent.set_target(self.current_target)
+            agent.set_target_position(self.current_target.get_position())
+            return agent
+        
+        return None
+    
 
     def screen_angle_to_heading(self, screen_angle):
         return (90 - screen_angle) % 360
@@ -272,5 +342,7 @@ class Jet:
         self.canvas_id = canvas_id
     def set_turn_rate(self, turn_rate):
         self.turn_rate = turn_rate
+    def set_datalink(self, datalink):
+        self.datalink = datalink
     
 
