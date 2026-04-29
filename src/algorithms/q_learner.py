@@ -39,6 +39,7 @@ class QLearner:
 
 
     #a method to get the current state of the environment, given all the info
+    #this method replaces get_box() from the q learning code in the repo, adapted to work for mine
     def get_state(self, distance_to_target, missiles_in_flight, threat_level):
         #@TODO
 
@@ -57,6 +58,7 @@ class QLearner:
 
     
     #a method to choose an action based on the current state and the q table
+    #this is the epsilon-greedy action selection from the lecture
     def choose_action(self, state):
         #@TODO
 
@@ -87,7 +89,8 @@ class QLearner:
 
     
 
-    #the method that returns the action to take (greedy policy) which is used during evaluation
+    #method to evaluate the current q table values during evalation
+    #(no exploration, just exploitation)
     def get_best_action(self, state):
         #@TODO
 
